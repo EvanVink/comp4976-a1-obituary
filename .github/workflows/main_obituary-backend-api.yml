@@ -27,7 +27,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Build and push Docker image to GHCR
+      - name: Build and start services (compose)
+        run: |
+          docker compose -f docker-compose.yml up -d --build
+
+      - name: Wait for API to be healthy
+        run: |
+          for i in {1..30}; do
+            if curl -sSf http://localhost:5000/ >/dev/null; then
+              echo "API is up" && break
+            fi
+            echo "Waiting for API..."; sleep 2
+          done
+
       - name: Build and push API image to GHCR
         uses: docker/build-push-action@v4
         with:
@@ -36,17 +48,10 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner,, }}/assignment1:${{ github.sha }}
-            ghcr.io/${{ github.repository_owner,, }}/assignment1:latest
+            ghcr.io/${{ github.repository_owner }}/assignment1:${{ github.sha }}
+            ghcr.io/${{ github.repository_owner }}/assignment1:latest
 
-      - name: Write image tag file
-        run: echo "ghcr.io/${{ github.repository_owner,, }}/assignment1:${{ github.sha }}" > image-tag.txt
-
-      - name: Upload image info
-        uses: actions/upload-artifact@v4
-        with:
-          name: image-info
-          path: image-tag.txt
+      # image pushed to GHCR: ghcr.io/${{ github.repository_owner }}/assignment1:${{ github.sha }}
 
   deploy:
     runs-on: ubuntu-latest
@@ -56,18 +61,6 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download image info
-        uses: actions/download-artifact@v4
-        with:
-          name: image-info
-
-      - name: Read image tag
-        id: loadtag
-        run: echo "image=$(cat image-tag.txt)" >> $GITHUB_OUTPUT
-
       - name: Login to Azure
         uses: azure/login@v2
         with:
@@ -75,8 +68,9 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_4A71EBE6F1834FAC9E4544D57D7C8E2B }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_31BBAA75CC9E45ECBB31D2B4C2B60876 }}
 
-      - name: Deploy container image to Azure Web App
+      - name: Deploy container image to Azure Web App (from GHCR)
         uses: azure/webapps-deploy@v3
         with:
           app-name: 'obituary-backend-api'
-          images: ${{ steps.loadtag.outputs.image }}
+          images: |
+            ghcr.io/${{ github.repository_owner }}/assignment1:${{ github.sha }}
