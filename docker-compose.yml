@@ -3,15 +3,13 @@ version: '3.8'
 services:
   db:
     image: mysql:8.0
-    command: --default-authentication-plugin=mysql_native_password
     environment:
       MYSQL_ROOT_PASSWORD: evanevan
       MYSQL_DATABASE: a2db
       MYSQL_USER: app
       MYSQL_PASSWORD: evanevan
-    # REMOVE THIS (not needed for API-to-DB and causes issues on Windows)
-    # ports:
-    #   - "3306:3306"
+    ports:
+      - "3307:3306"
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -19,14 +17,15 @@ services:
       retries: 5
 
   api:
-  build:
-    context: .
-    dockerfile: webApiObituary/Dockerfile
-  ports:
-    - "7001:80"
-  environment:
-    ASPNETCORE_ENVIRONMENT: Development
-    ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=a2db;Uid=app;Pwd=evanevan"
-  depends_on:
-    db:
-      condition: service_healthy
+    build:
+      context: .
+      dockerfile: webApiObituary/Dockerfile
+    ports:
+      - "7001:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Default=Server=db;Port=3306;Database=a2db;Uid=app;Pwd=evanevan
+    depends_on:
+      db:
+        condition: service_healthy
+
