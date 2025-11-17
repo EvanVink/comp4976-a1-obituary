@@ -24,7 +24,7 @@ services:
       - "7001:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection: "Server=db;Port=3306;Database=a2db;Uid=app;Pwd=evanevan"
+      - ConnectionStrings__Default=Server=db;Port=3306;Database=a2db;Uid=app;Pwd=evanevan
     depends_on:
       db:
         condition: service_healthy
