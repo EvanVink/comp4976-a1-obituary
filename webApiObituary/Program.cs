@@ -163,39 +163,39 @@ app.MapIdentityApi<IdentityUser>();
 app.MapRazorPages().WithStaticAssets();
 
 // RUN MIGRATIONS IN PRODUCTION (with timeout protection)
-_ = Task.Run(async () =>
+using (var scope = app.Services.CreateScope())
 {
-    try
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+
+    logger.LogInformation("Applying database migrations at startup...");
+
+    var maxRetries = 15;
+    var delay = TimeSpan.FromSeconds(2);
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++)
     {
-        await Task.Delay(5000); // Give the app a moment to start and allow DB to initialize
-        using (var scope = app.Services.CreateScope())
+        try
         {
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-
-            logger.LogInformation("Starting database migrations in background...");
-
-            // Apply migrations with timeout protection
-            using (var cts = new CancellationTokenSource(TimeSpan.FromMinutes(5)))
-            {
-                await db.Database.MigrateAsync(cts.Token);
-            }
-
+            await db.Database.MigrateAsync();
             logger.LogInformation("Database migrations completed successfully.");
-
-            // Test connection
-            var canConnect = await db.Database.CanConnectAsync();
-            logger.LogInformation($"Database connection test: {(canConnect ? "SUCCESS" : "FAILED")}");
+            break;
         }
-    }
-    catch (Exception ex)
-    {
-        using (var scope = app.Services.CreateScope())
+        catch (Exception ex)
         {
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-            logger.LogError(ex, "Database migration failed: {Message}", ex.Message);
+            logger.LogWarning(ex, "Migration attempt {Attempt}/{Max} failed. Retrying in {Delay}s...", attempt, maxRetries, delay.TotalSeconds);
+            if (attempt == maxRetries)
+            {
+                logger.LogError(ex, "Database migration failed after {Max} attempts.", maxRetries);
+                throw; // let it bubble if you want the process to exit
+            }
+            await Task.Delay(delay);
         }
     }
-});
 
-app.Run();
+    // Optional: test connection
+    var canConnect = await db.Database.CanConnectAsync();
+    logger.LogInformation("Database connection test: {Result}", canConnect ? "SUCCESS" : "FAILED");
+}
+
+await app.RunAsync();
