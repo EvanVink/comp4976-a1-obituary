@@ -2,19 +2,20 @@ version: '3.8'
 
 services:
   db:
-    image: mysql:8.0
-    environment:
-      MYSQL_ROOT_PASSWORD: evanevan
-      MYSQL_DATABASE: a2db
-      MYSQL_USER: app
-      MYSQL_PASSWORD: evanevan
-    ports:
-      - "3306:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+  image: mysql:8.0
+  command: --default-authentication-plugin=mysql_native_password
+  environment:
+    MYSQL_ROOT_PASSWORD: evanevan
+    MYSQL_DATABASE: a2db
+    MYSQL_USER: app
+    MYSQL_PASSWORD: evanevan
+  ports:
+    - "3306:3306"
+  healthcheck:
+    test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
 
   api:
     build:
