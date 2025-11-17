@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Assignment1.Services;
 using Microsoft.AspNetCore.HttpOverrides;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,8 +16,10 @@ var builder = WebApplication.CreateBuilder(args);
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
+var serverVersion = new MySqlServerVersion(new Version(8, 0, 32)); // set your MySQL version here
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(connectionString));
+    options.UseMySql(connectionString, serverVersion));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
