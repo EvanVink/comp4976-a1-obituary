@@ -19,7 +19,8 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var serverVersion = new MySqlServerVersion(new Version(8, 0, 32)); // set your MySQL version here
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseMySql(connectionString, serverVersion));
+    options.UseMySql(connectionString, serverVersion, mySqlOptions =>
+        mySqlOptions.EnableRetryOnFailure()));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -166,7 +167,7 @@ _ = Task.Run(async () =>
 {
     try
     {
-        await Task.Delay(1000); // Give the app a moment to start
+        await Task.Delay(5000); // Give the app a moment to start and allow DB to initialize
         using (var scope = app.Services.CreateScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();

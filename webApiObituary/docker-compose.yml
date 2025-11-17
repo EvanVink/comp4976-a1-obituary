@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: obituary-db
+    environment:
+      # These default values match the connection string found in `appsettings.json`.
+      # Put overrides in a `.env` file next to this compose file, e.g.:
+      #   MYSQL_ROOT_PASSWORD=evanevan
+      #   MYSQL_DATABASE=a2db
+      MYSQL_ROOT_PASSWORD: "${MYSQL_ROOT_PASSWORD:-evanevan}"
+      MYSQL_DATABASE: "${MYSQL_DATABASE:-a2db}"
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  mysql-data:
+    name: obituary_mysql_data
+
+# Notes:
+# - This Compose file starts a local MySQL 8.0 server and creates the database `a2db` by default.
+# - The app's `appsettings.json` currently uses:
+#     "Server=127.0.0.1;Port=3306;Database=a2db;User=root;Password=evanevan;..."
+#   so the defaults above match it. If you put `MYSQL_ROOT_PASSWORD` and/or `MYSQL_DATABASE` in
+#   a `.env` file, Docker Compose will pick them up and the container will use those values.
+# - Example .env (place next to this file):
+#     MYSQL_ROOT_PASSWORD=Your_strong_password1!
+#     MYSQL_DATABASE=a2db
+# - Example connection string to use in `appsettings.Development.json` or environment variables:
+#     "Server=127.0.0.1;Port=3306;Database=a2db;User=root;Password=Your_strong_password1!;Persist Security Info=False;Pooling=true"
