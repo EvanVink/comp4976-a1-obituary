@@ -48,12 +48,19 @@
                                 <span class="input-group-text bg-white border-end-0">
                                     <i class="fas fa-search text-muted"></i>
                                 </span>
-                                <input type="text" class="form-control border-start-0 ps-0" 
-                                       placeholder="Search obituaries by name..." 
-                                       @bind="searchTerm" @onkeypress="HandleKeyPress" />
+                                    <input type="text" class="form-control border-start-0 ps-0" 
+                                        placeholder="Search obituaries by name..." 
+                                        @bind="searchTerm" @bind:event="oninput" @onkeypress="HandleKeyPress" />
                                 <button class="btn btn-outline-primary" type="button" @onclick="SearchAsync">
                                     <i class="fas fa-search me-1"></i> Search
                                 </button>
+
+                                @if (!string.IsNullOrWhiteSpace(searchTerm))
+                                {
+                                    <button class="btn btn-outline-secondary ms-2" type="button" @onclick="ResetSearchAsync" title="Reset search and show all obituaries">
+                                        <i class="fas fa-undo me-1"></i> Reset
+                                    </button>
+                                }
                             </div>
                         </div>
                     </div>
@@ -392,6 +399,12 @@
     }
 
     // DEBUG METHODS: Hidden by default after migration success
+    private async Task ResetSearchAsync()
+    {
+        searchTerm = string.Empty;
+        currentPage = 1;
+        await LoadObituariesAsync();
+    }
     private void ToggleDebug()
     {
         showDebug = !showDebug;
